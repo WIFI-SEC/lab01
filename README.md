@@ -33,7 +33,26 @@ Este repositorio contiene material educativo para la clase práctica de **Seguri
 
 ### 🪟 Para Usuarios de Windows
 
+**¿Por qué necesito instalar algo adicional en Windows?**
+
+Este laboratorio utiliza herramientas de seguridad WiFi (tshark, aircrack-ng) que fueron desarrolladas originalmente para Linux/Unix. En Windows, tienes dos opciones:
+
+1. **WSL2 (Recomendado)**: Instalar un entorno Linux completo dentro de Windows
+2. **Git Bash**: Usar versiones Windows nativas de las herramientas (menos compatible)
+
+**Te recomendamos la Opción 1 (WSL2)** porque:
+- ✅ Todos los scripts funcionan sin problemas
+- ✅ Instalación automática de herramientas
+- ✅ Misma experiencia que Linux/macOS
+- ✅ Mejor compatibilidad con comandos bash
+
+---
+
 #### Opción 1: WSL2 (Windows Subsystem for Linux) - RECOMENDADO
+
+**¿Qué es WSL2?**
+
+WSL2 (Windows Subsystem for Linux 2) es una característica de Windows 10/11 que te permite ejecutar un entorno Linux real dentro de Windows, sin necesidad de máquina virtual ni dual boot. Es como tener Linux y Windows al mismo tiempo.
 
 **Paso 1: Instalar WSL2**
 
