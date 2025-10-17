@@ -61,7 +61,7 @@ echo ""
 echo "NOTA: Esta wordlist es solo para propósitos educativos."
 echo "      Para testing real, usar wordlists más completas como rockyou.txt"
 echo ""
-echo "Uso:"
+echo "Usa el handshake Numero 1 pulsando 1 "
 aircrack-ng -w $OUTPUT_FILE wifi_lab/pcaps/wpa2/wpa_induction.pcap
 echo "  hashcat -m 22000 hash.hc22000 $OUTPUT_FILE"
 echo ""
