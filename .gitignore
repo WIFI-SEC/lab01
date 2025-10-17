@@ -1,0 +1,71 @@
+# WiFi Security Lab - .gitignore
+
+# Directorio del laboratorio (se genera con setup)
+wifi_lab/
+
+# Outputs y reportes generados
+*.hccapx
+*.hccap
+*.16800
+*.22000
+*.log
+
+# Archivos temporales
+*.tmp
+*.swp
+*.bak
+*~
+
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# Linux
+*~
+.directory
+
+# Wireshark
+*.pcapng~
+*.pcap~
+
+# Outputs de análisis
+outputs/*
+reports/*
+
+# Pero mantener estructura de directorios
+!outputs/.gitkeep
+!reports/.gitkeep
+
+# Node modules (si usas herramientas JS)
+node_modules/
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+.venv/
+venv/
+
+# IDE
+.vscode/
+.idea/
+*.sublime-*
+
+# Logs
+logs/
+*.log
+
+# Credenciales (nunca commitear)
+*.key
+*.pem
+credentials.*
+secrets.*
+
+# Hashcat
+hashcat.potfile
+*.restore
+
+# Captura personal (no subir capturas propias)
+my_captures/
+private/
