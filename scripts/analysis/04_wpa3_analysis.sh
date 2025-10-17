@@ -1,9 +1,9 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 # ======================================================
 # Ejercicio 4: Análisis de WPA3 y SAE (Dragonfly)
 # ======================================================
-
+# Compatibilidad: Linux, macOS, Windows (WSL2 / Git Bash)
 PCAP_DIR="./wifi_lab/pcaps/wpa3"
 OUTPUT_DIR="./wifi_lab/outputs"
 

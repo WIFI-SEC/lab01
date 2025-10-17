@@ -1,9 +1,9 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 # ======================================================
 # Ejercicio 1: Análisis de 4-Way Handshake WPA2
 # ======================================================
-
+# Compatibilidad: Linux, macOS, Windows (WSL2 / Git Bash)
 PCAP_DIR="./wifi_lab/pcaps/wpa2"
 OUTPUT_DIR="./wifi_lab/outputs"
 

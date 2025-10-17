@@ -1,9 +1,10 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 # ======================================================
 # Script: setup_wifi_lab.sh (Versión mejorada con múltiples fuentes)
 # Descripción: Prepara un laboratorio WiFi con PCAPs públicos
 # Autor: UTN - Laboratorio Blockchain & Ciberseguridad
+# Compatibilidad: Linux, macOS, Windows (WSL2 / Git Bash)
 # ======================================================
 
 # Colores

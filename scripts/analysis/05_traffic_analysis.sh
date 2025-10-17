@@ -1,9 +1,9 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 # ======================================================
 # Ejercicio 5: Análisis de Tráfico sobre WiFi
 # ======================================================
-
+# Compatibilidad: Linux, macOS, Windows (WSL2 / Git Bash)
 PCAP_DIR="./wifi_lab/pcaps/misc"
 OUTPUT_DIR="./wifi_lab/outputs"
 

@@ -1,10 +1,11 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 # ══════════════════════════════════════════════════════════════════════════════
 # Script: demo_laboratorio.sh
 # Descripción: Demostración completa del Laboratorio WiFi Security para clase
 # Autor: UTN - Laboratorio Blockchain & Ciberseguridad
 # Uso: bash demo_laboratorio.sh
+# Compatibilidad: Linux, macOS, Windows (WSL2 / Git Bash)
 # ══════════════════════════════════════════════════════════════════════════════
 
 # Colores

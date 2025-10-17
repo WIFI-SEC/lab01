@@ -1,8 +1,9 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 # ======================================================
 # Script: validate_setup.sh
 # Descripción: Valida que el laboratorio WiFi esté correctamente configurado
+# Compatibilidad: Linux, macOS, Windows (WSL2 / Git Bash)
 # ======================================================
 
 BOLD='\033[1m'
@@ -16,13 +17,13 @@ ERRORS=0
 WARNINGS=0
 SUCCESS=0
 
-echo -e "${BOLD}${BLUE}"
+printf "${BOLD}${BLUE}"
 cat << "EOF"
 ╔══════════════════════════════════════════════════════════╗
 ║     Validación de Laboratorio WiFi                      ║
 ╚══════════════════════════════════════════════════════════╝
 EOF
-echo -e "${NC}"
+printf "${NC}\n"
 
 # ==========================================
 # Función para verificar comandos
@@ -34,16 +35,16 @@ check_command() {
 
     if command -v "$cmd" &> /dev/null; then
         version=$("$cmd" --version 2>&1 | head -1)
-        echo -e "${GREEN}[✓]${NC} $description: ${BOLD}instalado${NC}"
-        echo -e "    Versión: $version"
+        printf "${GREEN}[✓]${NC} $description: ${BOLD}instalado${NC}\n"
+        printf "    Versión: $version\n"
         ((SUCCESS++))
         return 0
     else
         if [ "$required" = "required" ]; then
-            echo -e "${RED}[✗]${NC} $description: ${BOLD}NO INSTALADO${NC} (requerido)"
+            printf "${RED}[✗]${NC} $description: ${BOLD}NO INSTALADO${NC} (requerido)\n"
             ((ERRORS++))
         else
-            echo -e "${YELLOW}[!]${NC} $description: ${BOLD}NO INSTALADO${NC} (opcional)"
+            printf "${YELLOW}[!]${NC} $description: ${BOLD}NO INSTALADO${NC} (opcional)\n"
             ((WARNINGS++))
         fi
         return 1
@@ -53,7 +54,7 @@ check_command() {
 # ==========================================
 # Verificar herramientas requeridas
 # ==========================================
-echo -e "${BOLD}Verificando herramientas requeridas...${NC}"
+printf "${BOLD}Verificando herramientas requeridas...${NC}\n"
 echo ""
 
 check_command "tshark" "Tshark (Wireshark CLI)" "required"
@@ -62,7 +63,7 @@ check_command "wget" "wget" "required"
 check_command "sha256sum" "sha256sum" "required" || check_command "shasum" "shasum (alternativa a sha256sum)" "required"
 
 echo ""
-echo -e "${BOLD}Verificando herramientas opcionales...${NC}"
+printf "${BOLD}Verificando herramientas opcionales...${NC}\n"
 echo ""
 
 check_command "wireshark" "Wireshark (GUI)" "optional"
@@ -76,7 +77,7 @@ echo ""
 # ==========================================
 # Verificar estructura de directorios
 # ==========================================
-echo -e "${BOLD}Verificando estructura de directorios...${NC}"
+printf "${BOLD}Verificando estructura de directorios...${NC}\n"
 echo ""
 
 check_directory() {
@@ -85,12 +86,12 @@ check_directory() {
 
     if [ -d "$dir" ]; then
         count=$(find "$dir" -type f 2>/dev/null | wc -l | tr -d ' ')
-        echo -e "${GREEN}[✓]${NC} $description: ${BOLD}OK${NC} ($count archivos)"
+        printf "${GREEN}[✓]${NC} $description: ${BOLD}OK${NC} ($count archivos)\n"
         ((SUCCESS++))
         return 0
     else
-        echo -e "${YELLOW}[!]${NC} $description: ${BOLD}NO EXISTE${NC}"
-        echo -e "    Ejecutar: ./setup_wifi_lab.sh"
+        printf "${YELLOW}[!]${NC} $description: ${BOLD}NO EXISTE${NC}\n"
+        printf "    Ejecutar: ./setup_wifi_lab.sh\n"
         ((WARNINGS++))
         return 1
     fi
@@ -108,15 +109,15 @@ if [ -d "wifi_lab" ]; then
     # Verificar manifest
     echo ""
     if [ -f "wifi_lab/manifest.sha256" ]; then
-        echo -e "${GREEN}[✓]${NC} Manifest de integridad: ${BOLD}OK${NC}"
+        printf "${GREEN}[✓]${NC} Manifest de integridad: ${BOLD}OK${NC}\n"
         ((SUCCESS++))
     else
-        echo -e "${YELLOW}[!]${NC} Manifest de integridad: ${BOLD}NO ENCONTRADO${NC}"
+        printf "${YELLOW}[!]${NC} Manifest de integridad: ${BOLD}NO ENCONTRADO${NC}\n"
         ((WARNINGS++))
     fi
 else
-    echo -e "${YELLOW}[!]${NC} Directorio ${BOLD}wifi_lab${NC} no existe"
-    echo -e "    Ejecutar primero: ./setup_wifi_lab.sh"
+    printf "${YELLOW}[!]${NC} Directorio ${BOLD}wifi_lab${NC} no existe\n"
+    printf "    Ejecutar primero: ./setup_wifi_lab.sh\n"
     ((WARNINGS++))
 fi
 
@@ -125,7 +126,7 @@ echo ""
 # ==========================================
 # Verificar scripts de análisis
 # ==========================================
-echo -e "${BOLD}Verificando scripts de análisis...${NC}"
+printf "${BOLD}Verificando scripts de análisis...${NC}\n"
 echo ""
 
 check_script() {
@@ -134,16 +135,16 @@ check_script() {
 
     if [ -f "$script" ]; then
         if [ -x "$script" ]; then
-            echo -e "${GREEN}[✓]${NC} $description: ${BOLD}OK${NC} (ejecutable)"
+            printf "${GREEN}[✓]${NC} $description: ${BOLD}OK${NC} (ejecutable)\n"
             ((SUCCESS++))
         else
-            echo -e "${YELLOW}[!]${NC} $description: ${BOLD}OK pero no ejecutable${NC}"
-            echo -e "    Ejecutar: chmod +x $script"
+            printf "${YELLOW}[!]${NC} $description: ${BOLD}OK pero no ejecutable${NC}\n"
+            printf "    Ejecutar: chmod +x $script\n"
             ((WARNINGS++))
         fi
         return 0
     else
-        echo -e "${RED}[✗]${NC} $description: ${BOLD}NO ENCONTRADO${NC}"
+        printf "${RED}[✗]${NC} $description: ${BOLD}NO ENCONTRADO${NC}\n"
         ((ERRORS++))
         return 1
     fi
@@ -161,13 +162,13 @@ echo ""
 # Verificar PCAPs descargados
 # ==========================================
 if [ -d "wifi_lab/pcaps" ]; then
-    echo -e "${BOLD}Verificando PCAPs descargados...${NC}"
+    printf "${BOLD}Verificando PCAPs descargados...${NC}\n"
     echo ""
 
     TOTAL_PCAPS=$(find wifi_lab/pcaps -type f \( -name "*.pcap" -o -name "*.pcapng" -o -name "*.cap" \) 2>/dev/null | wc -l | tr -d ' ')
 
     if [ "$TOTAL_PCAPS" -gt 0 ]; then
-        echo -e "${GREEN}[✓]${NC} Total de PCAPs encontrados: ${BOLD}$TOTAL_PCAPS${NC}"
+        printf "${GREEN}[✓]${NC} Total de PCAPs encontrados: ${BOLD}$TOTAL_PCAPS${NC}\n"
         ((SUCCESS++))
 
         echo ""
@@ -176,7 +177,7 @@ if [ -d "wifi_lab/pcaps" ]; then
         for category in wpa2 wpa3 wep attacks misc; do
             count=$(find "wifi_lab/pcaps/$category" -type f 2>/dev/null | wc -l | tr -d ' ')
             if [ "$count" -gt 0 ]; then
-                echo -e "  ${BLUE}•${NC} $category: $count archivos"
+                printf "  ${BLUE}•${NC} $category: $count archivos\n"
             fi
         done
 
@@ -188,19 +189,19 @@ if [ -d "wifi_lab/pcaps" ]; then
             cd wifi_lab
 
             if sha256sum -c manifest.sha256 &>/dev/null || shasum -a 256 -c manifest.sha256 &>/dev/null; then
-                echo -e "${GREEN}[✓]${NC} Integridad de PCAPs: ${BOLD}VERIFICADA${NC}"
+                printf "${GREEN}[✓]${NC} Integridad de PCAPs: ${BOLD}VERIFICADA${NC}\n"
                 ((SUCCESS++))
             else
-                echo -e "${YELLOW}[!]${NC} Integridad de PCAPs: ${BOLD}NO PUDO VERIFICARSE${NC}"
-                echo -e "    Algunos archivos pueden haberse corrompido o modificado"
+                printf "${YELLOW}[!]${NC} Integridad de PCAPs: ${BOLD}NO PUDO VERIFICARSE${NC}\n"
+                printf "    Algunos archivos pueden haberse corrompido o modificado\n"
                 ((WARNINGS++))
             fi
 
             cd ..
         fi
     else
-        echo -e "${RED}[✗]${NC} No se encontraron PCAPs"
-        echo -e "    Ejecutar: ./setup_wifi_lab.sh"
+        printf "${RED}[✗]${NC} No se encontraron PCAPs\n"
+        printf "    Ejecutar: ./setup_wifi_lab.sh\n"
         ((ERRORS++))
     fi
 
@@ -210,7 +211,7 @@ fi
 # ==========================================
 # Verificar documentación
 # ==========================================
-echo -e "${BOLD}Verificando documentación...${NC}"
+printf "${BOLD}Verificando documentación...${NC}\n"
 echo ""
 
 check_file() {
@@ -219,11 +220,11 @@ check_file() {
 
     if [ -f "$file" ]; then
         size=$(wc -l < "$file" | tr -d ' ')
-        echo -e "${GREEN}[✓]${NC} $description: ${BOLD}OK${NC} ($size líneas)"
+        printf "${GREEN}[✓]${NC} $description: ${BOLD}OK${NC} ($size líneas)\n"
         ((SUCCESS++))
         return 0
     else
-        echo -e "${RED}[✗]${NC} $description: ${BOLD}NO ENCONTRADO${NC}"
+        printf "${RED}[✗]${NC} $description: ${BOLD}NO ENCONTRADO${NC}\n"
         ((ERRORS++))
         return 1
     fi
@@ -238,27 +239,27 @@ echo ""
 # ==========================================
 # Verificar permisos de captura (opcional)
 # ==========================================
-echo -e "${BOLD}Verificando permisos de captura...${NC}"
+printf "${BOLD}Verificando permisos de captura...${NC}\n"
 echo ""
 
 if [ "$(uname)" = "Darwin" ]; then
     # macOS
     if [ -e "/dev/bpf0" ]; then
-        echo -e "${GREEN}[✓]${NC} BPF devices: ${BOLD}DISPONIBLES${NC}"
+        printf "${GREEN}[✓]${NC} BPF devices: ${BOLD}DISPONIBLES${NC}\n"
         ((SUCCESS++))
     else
-        echo -e "${YELLOW}[!]${NC} BPF devices: ${BOLD}NO DISPONIBLES${NC}"
-        echo -e "    Para capturar tráfico, instalar: brew install --cask wireshark"
+        printf "${YELLOW}[!]${NC} BPF devices: ${BOLD}NO DISPONIBLES${NC}\n"
+        printf "    Para capturar tráfico, instalar: brew install --cask wireshark\n"
         ((WARNINGS++))
     fi
 elif [ "$(uname)" = "Linux" ]; then
     # Linux
     if groups | grep -q wireshark; then
-        echo -e "${GREEN}[✓]${NC} Usuario en grupo wireshark: ${BOLD}SÍ${NC}"
+        printf "${GREEN}[✓]${NC} Usuario en grupo wireshark: ${BOLD}SÍ${NC}\n"
         ((SUCCESS++))
     else
-        echo -e "${YELLOW}[!]${NC} Usuario en grupo wireshark: ${BOLD}NO${NC}"
-        echo -e "    Para capturar sin sudo: sudo usermod -aG wireshark \$USER"
+        printf "${YELLOW}[!]${NC} Usuario en grupo wireshark: ${BOLD}NO${NC}\n"
+        printf "    Para capturar sin sudo: sudo usermod -aG wireshark \$USER\n"
         ((WARNINGS++))
     fi
 fi
@@ -269,7 +270,7 @@ echo ""
 # Test básico de tshark
 # ==========================================
 if command -v tshark &> /dev/null && [ "$TOTAL_PCAPS" -gt 0 ]; then
-    echo -e "${BOLD}Ejecutando test básico de tshark...${NC}"
+    printf "${BOLD}Ejecutando test básico de tshark...${NC}\n"
     echo ""
 
     TEST_PCAP=$(find wifi_lab/pcaps -type f \( -name "*.pcap" -o -name "*.pcapng" \) 2>/dev/null | head -1)
@@ -280,10 +281,10 @@ if command -v tshark &> /dev/null && [ "$TOTAL_PCAPS" -gt 0 ]; then
         PACKET_COUNT=$(tshark -r "$TEST_PCAP" 2>/dev/null | wc -l | tr -d ' ')
 
         if [ "$PACKET_COUNT" -gt 0 ]; then
-            echo -e "${GREEN}[✓]${NC} tshark funciona correctamente: ${BOLD}$PACKET_COUNT paquetes leídos${NC}"
+            printf "${GREEN}[✓]${NC} tshark funciona correctamente: ${BOLD}$PACKET_COUNT paquetes leídos${NC}\n"
             ((SUCCESS++))
         else
-            echo -e "${RED}[✗]${NC} tshark no pudo leer el PCAP"
+            printf "${RED}[✗]${NC} tshark no pudo leer el PCAP\n"
             ((ERRORS++))
         fi
     fi
@@ -294,27 +295,27 @@ fi
 # ==========================================
 # Resumen final
 # ==========================================
-echo -e "${BOLD}╔══════════════════════════════════════════════════════════╗${NC}"
-echo -e "${BOLD}║                    RESUMEN DE VALIDACIÓN                 ║${NC}"
-echo -e "${BOLD}╚══════════════════════════════════════════════════════════╝${NC}"
+printf "${BOLD}╔══════════════════════════════════════════════════════════╗${NC}\n"
+printf "${BOLD}║                    RESUMEN DE VALIDACIÓN                 ║${NC}\n"
+printf "${BOLD}╚══════════════════════════════════════════════════════════╝${NC}\n"
 echo ""
 
 TOTAL=$((SUCCESS + WARNINGS + ERRORS))
 
-echo -e "${GREEN}  ✓ Verificaciones exitosas:${NC} ${BOLD}$SUCCESS${NC}"
-echo -e "${YELLOW}  ! Advertencias:${NC}             ${BOLD}$WARNINGS${NC}"
-echo -e "${RED}  ✗ Errores:${NC}                  ${BOLD}$ERRORS${NC}"
+printf "${GREEN}  ✓ Verificaciones exitosas:${NC} ${BOLD}$SUCCESS${NC}\n"
+printf "${YELLOW}  ! Advertencias:${NC}             ${BOLD}$WARNINGS${NC}\n"
+printf "${RED}  ✗ Errores:${NC}                  ${BOLD}$ERRORS${NC}\n"
 echo ""
 
 # ==========================================
 # Recomendaciones
 # ==========================================
 if [ $ERRORS -gt 0 ] || [ $WARNINGS -gt 0 ]; then
-    echo -e "${BOLD}Recomendaciones:${NC}"
+    printf "${BOLD}Recomendaciones:${NC}\n"
     echo ""
 
     if [ $ERRORS -gt 0 ]; then
-        echo -e "${RED}ERRORES CRÍTICOS:${NC}"
+        printf "${RED}ERRORES CRÍTICOS:${NC}\n"
 
         if ! command -v tshark &> /dev/null; then
             echo "  1. Instalar Wireshark/tshark:"
@@ -338,7 +339,7 @@ if [ $ERRORS -gt 0 ] || [ $WARNINGS -gt 0 ]; then
     fi
 
     if [ $WARNINGS -gt 0 ]; then
-        echo -e "${YELLOW}MEJORAS SUGERIDAS:${NC}"
+        printf "${YELLOW}MEJORAS SUGERIDAS:${NC}\n"
 
         if ! command -v wireshark &> /dev/null; then
             echo "  • Instalar Wireshark GUI para análisis visual"
@@ -365,16 +366,16 @@ fi
 # ==========================================
 if [ $ERRORS -eq 0 ]; then
     echo ""
-    echo -e "${GREEN}${BOLD}✓ Laboratorio correctamente configurado!${NC}"
+    printf "${GREEN}${BOLD}✓ Laboratorio correctamente configurado!${NC}\n"
     echo ""
-    echo -e "${BOLD}Próximos pasos:${NC}"
+    printf "${BOLD}Próximos pasos:${NC}\n"
     echo "  1. Revisar guía de ejercicios:  cat EJERCICIOS.md"
     echo "  2. Ejecutar primer ejercicio:   cd analysis_scripts && ./01_handshake_analysis.sh"
     echo "  3. Explorar PCAPs con Wireshark: wireshark wifi_lab/pcaps/wpa2/*.pcap"
     echo ""
 else
     echo ""
-    echo -e "${RED}${BOLD}✗ Configuración incompleta${NC}"
+    printf "${RED}${BOLD}✗ Configuración incompleta${NC}\n"
     echo ""
     echo "Resolver los errores críticos antes de comenzar los ejercicios."
     echo ""

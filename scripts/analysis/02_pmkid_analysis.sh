@@ -1,9 +1,9 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 # ======================================================
 # Ejercicio 2: Análisis de PMKID Attack
 # ======================================================
-
+# Compatibilidad: Linux, macOS, Windows (WSL2 / Git Bash)
 PCAP_DIR="./wifi_lab/pcaps/wpa2"
 OUTPUT_DIR="./wifi_lab/outputs"
 

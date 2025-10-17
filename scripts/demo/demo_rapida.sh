@@ -1,9 +1,10 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 # ══════════════════════════════════════════════════════════════════════════════
 # Script: demo_rapida.sh
 # Descripción: Demo rápida (5 minutos) del laboratorio WiFi para presentaciones
 # Uso: bash demo_rapida.sh
+# Compatibilidad: Linux, macOS, Windows (WSL2 / Git Bash)
 # ══════════════════════════════════════════════════════════════════════════════
 
 BOLD='\033[1m'

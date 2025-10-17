@@ -1,6 +1,7 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 # Script para descargar PCAPs adicionales específicos para ejercicios
+# Compatibilidad: Linux, macOS, Windows (WSL2 / Git Bash)
 
 BOLD='\033[1m'
 GREEN='\033[0;32m'

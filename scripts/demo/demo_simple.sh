@@ -1,9 +1,10 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 # ══════════════════════════════════════════════════════════════════════════════
 # Script: demo_simple.sh
 # Descripción: Demo simplificada y rápida del laboratorio (sin pausas)
 # Uso: bash demo_simple.sh
+# Compatibilidad: Linux, macOS, Windows (WSL2 / Git Bash)
 # ══════════════════════════════════════════════════════════════════════════════
 
 BOLD='\033[1m'

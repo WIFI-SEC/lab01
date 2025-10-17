@@ -1,9 +1,9 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 # ======================================================
 # Ejercicio 3: Detección de Ataques de Deautenticación
 # ======================================================
-
+# Compatibilidad: Linux, macOS, Windows (WSL2 / Git Bash)
 PCAP_DIR="./wifi_lab/pcaps/attacks"
 OUTPUT_DIR="./wifi_lab/outputs"
 
