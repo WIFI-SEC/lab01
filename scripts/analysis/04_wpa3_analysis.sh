@@ -7,6 +7,15 @@
 PCAP_DIR="./wifi_lab/pcaps/wpa3"
 OUTPUT_DIR="./wifi_lab/outputs"
 
+# Función auxiliar para formatear tablas (compatible sin 'column')
+format_table() {
+    if command -v column &> /dev/null; then
+        column -t -s'|'
+    else
+        cat  # Si no hay column, mostrar tal cual
+    fi
+}
+
 echo "=========================================="
 echo "  Ejercicio 4: WPA3 SAE Analysis"
 echo "=========================================="
@@ -91,7 +100,7 @@ if [ "$AUTH_COUNT" -gt 0 ]; then
         -e wlan.fixed.auth.alg \
         -e wlan.fixed.status_code 2>/dev/null | \
         awk 'BEGIN{print "Frame | Source | Destination | Auth Alg | Status"}
-             {printf "%s | %s | %s | %s | %s\n", $1, $2, $3, $4, $5}' | column -t -s'|'
+             {printf "%s | %s | %s | %s | %s\n", $1, $2, $3, $4, $5}' | format_table
 
     echo ""
     echo "Algoritmos de autenticación encontrados:"
@@ -152,7 +161,7 @@ if [ "$SAE_FRAMES" -gt 0 ]; then
         -e wlan.da \
         -e wlan.fixed.auth.sae.group 2>/dev/null | \
         awk 'BEGIN{print "Frame | Tiempo | Source | Destination | SAE Group"}
-             {printf "%s | %s | %s | %s | %s\n", $1, $2, $3, $4, $5}' | column -t -s'|' | head -10
+             {printf "%s | %s | %s | %s | %s\n", $1, $2, $3, $4, $5}' | format_table | head -10
 else
     echo "[i] No se encontraron frames SAE explícitos en este PCAP"
     echo "    (Algunos PCAPs de ejemplo pueden estar simplificados)"
@@ -166,7 +175,7 @@ echo ""
 echo "--- TAREA 3: Comparación WPA2 vs WPA3 ---"
 echo ""
 
-cat << 'COMPARISON' | column -t -s'|'
+cat << 'COMPARISON' | format_table
 Característica|WPA2|WPA3
 Autenticación|4-way handshake|SAE + 4-way handshake
 PSK vulnerable a|Diccionario offline|Resistente (SAE)

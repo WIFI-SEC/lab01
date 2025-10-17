@@ -7,6 +7,15 @@
 PCAP_DIR="./wifi_lab/pcaps/wpa2"
 OUTPUT_DIR="./wifi_lab/outputs"
 
+# Función auxiliar para formatear tablas (compatible sin 'column')
+format_table() {
+    if command -v column &> /dev/null; then
+        column -t -s'|'
+    else
+        cat  # Si no hay column, mostrar tal cual
+    fi
+}
+
 echo "=========================================="
 echo "  Ejercicio 2: PMKID Attack Analysis"
 echo "=========================================="
@@ -168,7 +177,7 @@ echo ""
 echo "--- TAREA 5: PMKID vs 4-Way Handshake ---"
 echo ""
 
-cat << 'COMPARISON' | column -t -s'|'
+cat << 'COMPARISON' | format_table
 Aspecto|PMKID|4-Way Handshake
 Requiere cliente|NO|SÍ
 Frames necesarios|1|4

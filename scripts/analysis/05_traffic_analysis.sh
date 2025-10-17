@@ -7,6 +7,15 @@
 PCAP_DIR="./wifi_lab/pcaps/misc"
 OUTPUT_DIR="./wifi_lab/outputs"
 
+# Función auxiliar para formatear tablas (compatible sin 'column')
+format_table() {
+    if command -v column &> /dev/null; then
+        column -t -s'|'
+    else
+        cat  # Si no hay column, mostrar tal cual
+    fi
+}
+
 echo "=========================================="
 echo "  Ejercicio 5: Network Traffic Analysis"
 echo "=========================================="
@@ -83,7 +92,15 @@ if [ -f "$HTTP_PCAP" ]; then
 
     # Estadísticas generales
     echo "Estadísticas del PCAP:"
-    capinfos "$HTTP_PCAP" 2>/dev/null | grep -E "(File size|Number of packets|Capture duration|Data rate)"
+    if command -v capinfos &> /dev/null; then
+        capinfos "$HTTP_PCAP" 2>/dev/null | grep -E "(File size|Number of packets|Capture duration|Data rate)"
+    else
+        # Alternativa con tshark si capinfos no está disponible
+        PACKET_COUNT=$(tshark -r "$HTTP_PCAP" 2>/dev/null | wc -l | tr -d ' ')
+        FILE_SIZE=$(ls -lh "$HTTP_PCAP" 2>/dev/null | awk '{print $5}')
+        echo "  File size: $FILE_SIZE"
+        echo "  Number of packets: $PACKET_COUNT"
+    fi
 
     echo ""
 
@@ -103,7 +120,7 @@ if [ -f "$HTTP_PCAP" ]; then
             -e http.request.uri 2>/dev/null | \
             awk 'BEGIN{print "Frame | Source IP | Dest IP | Method | Host | URI"}
                  {printf "%s | %s | %s | %s | %s | %s\n", $1, $2, $3, $4, $5, $6}' | \
-            column -t -s'|' | head -20
+            format_table | head -20
 
         echo ""
 

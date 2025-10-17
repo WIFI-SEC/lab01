@@ -7,6 +7,15 @@
 PCAP_DIR="./wifi_lab/pcaps/attacks"
 OUTPUT_DIR="./wifi_lab/outputs"
 
+# Función auxiliar para formatear tablas (compatible sin 'column')
+format_table() {
+    if command -v column &> /dev/null; then
+        column -t -s'|'
+    else
+        cat  # Si no hay column, mostrar tal cual
+    fi
+}
+
 echo "=========================================="
 echo "  Ejercicio 3: Deauthentication Attacks"
 echo "=========================================="
@@ -80,7 +89,7 @@ if [ "$DEAUTH_COUNT" -gt 0 ]; then
         -e wlan.da \
         -e wlan.fixed.reason_code 2>/dev/null | \
         awk 'BEGIN{print "Frame | Tiempo(s) | Origen | Destino | Reason Code"}
-             {printf "%s | %s | %s | %s | %s\n", $1, $2, $3, $4, $5}' | column -t -s'|'
+             {printf "%s | %s | %s | %s | %s\n", $1, $2, $3, $4, $5}' | format_table
 else
     echo "[!] No se encontraron frames de deauth en este PCAP"
     echo "    (Esto es normal, no todos los PCAPs contienen ataques)"
@@ -139,14 +148,20 @@ if [ "$DEAUTH_COUNT" -gt 0 ]; then
 
     echo ""
 
-    # Ratio de deauth/tiempo
+    # Ratio de deauth/tiempo (usando aritmética bash en lugar de bc)
     TOTAL_TIME=$(tshark -r "$PCAP_FILE" -T fields -e frame.time_relative 2>/dev/null | tail -1)
-    if [ -n "$TOTAL_TIME" ] && [ "$(echo "$TOTAL_TIME > 0" | bc -l 2>/dev/null || echo 0)" -eq 1 ]; then
-        DEAUTH_RATE=$(echo "scale=2; $DEAUTH_COUNT / $TOTAL_TIME" | bc -l)
-        echo "Ratio de deauth: $DEAUTH_RATE frames/segundo"
+    if [ -n "$TOTAL_TIME" ]; then
+        # Convertir a entero para comparación (multiplicar por 100 para 2 decimales)
+        TOTAL_TIME_INT=$(echo "$TOTAL_TIME" | awk '{printf "%.0f", $1 * 100}')
+        if [ "$TOTAL_TIME_INT" -gt 0 ]; then
+            DEAUTH_RATE=$(awk "BEGIN {printf \"%.2f\", $DEAUTH_COUNT / $TOTAL_TIME}")
+            echo "Ratio de deauth: $DEAUTH_RATE frames/segundo"
 
-        if [ "$(echo "$DEAUTH_RATE > 10" | bc -l 2>/dev/null || echo 0)" -eq 1 ]; then
-            echo "⚠️  ALERTA: Ratio anormalmente alto - posible flood attack"
+            # Comparar si rate > 10
+            RATE_INT=$(echo "$DEAUTH_RATE" | awk '{printf "%.0f", $1}')
+            if [ "$RATE_INT" -gt 10 ]; then
+                echo "⚠️  ALERTA: Ratio anormalmente alto - posible flood attack"
+            fi
         fi
     fi
 
