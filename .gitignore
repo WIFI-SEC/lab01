@@ -69,3 +69,6 @@ hashcat.potfile
 # Captura personal (no subir capturas propias)
 my_captures/
 private/
+
+# Archivos archivados (histórico del desarrollo)
+.archive/

@@ -24,23 +24,27 @@ Este repositorio contiene material educativo para la clase práctica de **Seguri
 
 ```bash
 # 1. Clonar el repositorio
-git clone https://github.com/[tu-usuario]/wifisec
-cd wifisec
+git clone https://github.com/WIFI-SEC/lab01.git
+cd lab01
 
 # 2. Instalar herramientas automáticamente
-bash install_tools.sh
+bash scripts/setup/install_tools.sh
 
 # 3. Setup del laboratorio (descarga PCAPs principales)
-bash setup_wifi_lab.sh
+bash scripts/setup/setup_wifi_lab.sh
 
 # 4. Descargar PCAPs adicionales (opcional pero recomendado)
-bash download_additional_pcaps.sh
+bash scripts/setup/download_additional_pcaps.sh
 
 # 5. Validar instalación
-bash validate_setup.sh
+bash scripts/setup/validate_setup.sh
 
-# 6. Comenzar con ejercicios progresivos
-# Ver EJERCICIOS_PROGRESIVOS.md - Empezar por Ejercicio 1
+# 6. Ver demo del laboratorio (recomendado para primera vez)
+bash scripts/demo/demo_rapida.sh          # 5 minutos
+bash scripts/demo/demo_laboratorio.sh     # 15-20 minutos completo
+
+# 7. Comenzar con ejercicios progresivos
+# Ver docs/exercises/EJERCICIOS_PROGRESIVOS.md - Empezar por Ejercicio 1
 ```
 
 ### Opción 2: Instalación Manual
@@ -53,34 +57,63 @@ brew install wireshark aircrack-ng
 sudo apt install wireshark tshark aircrack-ng
 
 # Luego ejecutar setup
-bash setup_wifi_lab.sh
+bash scripts/setup/setup_wifi_lab.sh
 ```
 
-**Ver guía completa**: [GUIA_INSTALACION.md](GUIA_INSTALACION.md)
+**Ver guía completa**: [docs/guides/GUIA_INSTALACION.md](docs/guides/GUIA_INSTALACION.md)
 
 ## 📁 Estructura del Proyecto
 
 ```
-wifisec/
-├── README.md                    # Este archivo
-├── EJERCICIOS.md               # Guía detallada de ejercicios
-├── setup_wifi_lab.sh           # Script principal de setup
-├── analysis_scripts/           # Scripts de análisis por ejercicio
-│   ├── 01_handshake_analysis.sh
-│   ├── 02_pmkid_analysis.sh
-│   ├── 03_deauth_detection.sh
-│   ├── 04_wpa3_analysis.sh
-│   └── 05_traffic_analysis.sh
-└── wifi_lab/                   # Creado por setup_wifi_lab.sh
-    ├── pcaps/                  # PCAPs descargados
-    │   ├── wpa2/
-    │   ├── wpa3/
-    │   ├── wep/
-    │   ├── attacks/
-    │   └── misc/
-    ├── outputs/                # Resultados de análisis
-    ├── reports/                # Reportes generados
-    └── manifest.sha256         # Checksums de integridad
+lab01/
+├── README.md                           # Este archivo
+├── LICENSE                             # Licencia MIT
+│
+├── docs/                               # 📚 Documentación
+│   ├── exercises/                      # Ejercicios y referencias
+│   │   ├── EJERCICIOS_PROGRESIVOS.md  # 10 ejercicios estructurados ⭐
+│   │   ├── EJERCICIOS.md              # Ejercicios originales
+│   │   └── CHEATSHEET.md              # Referencia rápida de comandos
+│   │
+│   └── guides/                         # Guías para profesores y alumnos
+│       ├── GUIA_DEMO.md               # Cómo presentar el laboratorio
+│       ├── GUIA_INSTALACION.md        # Instalación detallada
+│       ├── INICIO_RAPIDO.md           # Quick start extendido
+│       ├── INSTRUCTOR_GUIDE.md        # Soluciones (solo profesores)
+│       ├── TUTORIAL_PASO_A_PASO.md    # Tutorial completo
+│       └── REFERENCIA_RAPIDA_CLASE.md # Referencia de 1 página
+│
+├── scripts/                            # 🔧 Scripts del laboratorio
+│   ├── setup/                          # Scripts de instalación
+│   │   ├── install_tools.sh           # Instalar herramientas
+│   │   ├── setup_wifi_lab.sh          # Setup inicial del lab
+│   │   ├── download_additional_pcaps.sh # Descargar más PCAPs
+│   │   ├── validate_setup.sh          # Validar instalación
+│   │   └── create_test_wordlist.sh    # Crear wordlist de prueba
+│   │
+│   ├── demo/                           # Scripts de demostración
+│   │   ├── README.md                  # Guía de demos
+│   │   ├── demo_rapida.sh             # Demo 5 min ⚡
+│   │   ├── demo_laboratorio.sh        # Demo completa 15-20 min 🎯
+│   │   └── demo_simple.sh             # Demo simplificada
+│   │
+│   └── analysis/                       # Scripts de análisis por tema
+│       ├── 01_handshake_analysis.sh   # WPA2 4-way handshake
+│       ├── 02_pmkid_analysis.sh       # PMKID attack
+│       ├── 03_deauth_detection.sh     # Deauth attacks
+│       ├── 04_wpa3_analysis.sh        # WPA3 SAE
+│       └── 05_traffic_analysis.sh     # HTTP/DNS traffic
+│
+└── wifi_lab/                           # 🗂️ Creado por setup
+    ├── pcaps/                          # PCAPs descargados (9 archivos)
+    │   ├── wpa2/                       # WPA2 handshakes
+    │   ├── wpa3/                       # WPA3 SAE
+    │   ├── wep/                        # WEP (legacy)
+    │   ├── attacks/                    # Ataques (deauth, arp spoofing)
+    │   └── misc/                       # HTTP, DNS, DHCP
+    ├── outputs/                        # Resultados de análisis
+    ├── reports/                        # Reportes generados
+    └── manifest.sha256                 # Checksums de integridad
 ```
 
 ## 🛠️ Requisitos
@@ -99,14 +132,13 @@ wifisec/
 ```bash
 tshark --version
 aircrack-ng --version
-hcxpcapngtool --version
 ```
 
 ## 📚 Ejercicios
 
-### 🆕 Ejercicios Progresivos (Recomendado para Principiantes)
+### 🆕 Ejercicios Progresivos (Recomendado)
 
-Ver **[EJERCICIOS_PROGRESIVOS.md](EJERCICIOS_PROGRESIVOS.md)** - 10 ejercicios estructurados:
+Ver **[docs/exercises/EJERCICIOS_PROGRESIVOS.md](docs/exercises/EJERCICIOS_PROGRESIVOS.md)** - 10 ejercicios estructurados:
 
 **Nivel Básico** (30 min c/u):
 1. Explorando PCAPs con tshark
@@ -126,52 +158,42 @@ Ver **[EJERCICIOS_PROGRESIVOS.md](EJERCICIOS_PROGRESIVOS.md)** - 10 ejercicios e
 **Escenario Integrador** (90-120 min):
 10. Auditoría Completa de Red WiFi
 
-### Ejercicios con Scripts Automatizados
+## 🎬 Demos del Laboratorio
 
-### [Ejercicio: WPA2 4-Way Handshake](analysis_scripts/01_handshake_analysis.sh)
-Análisis del proceso de autenticación WPA2-PSK mediante frames EAPOL.
+Para presentar el laboratorio en clase o ver una demostración completa:
 
-**Temas**: EAPOL, PTK, PMK, nonces, MIC
+### Demo Rápida (5 minutos)
+```bash
+bash scripts/demo/demo_rapida.sh
+```
+Muestra highlights: PCAPs disponibles, WPA2 handshake, detección de ataques.
 
-### [Ejercicio: PMKID Attack](analysis_scripts/02_pmkid_analysis.sh)
-Estudio del PMKID attack, técnica que no requiere capturar clientes activos.
+### Demo Completa (15-20 minutos)
+```bash
+bash scripts/demo/demo_laboratorio.sh
+```
+Demo interactiva con 7 secciones detalladas y generación de reporte.
 
-**Temas**: PMKID, RSN IE, Hashcat mode 16800
-
-### [Ejercicio: Deauthentication Detection](analysis_scripts/03_deauth_detection.sh)
-Detección y análisis de ataques de deautenticación.
-
-**Temas**: Management frames, reason codes, 802.11w, IDS rules
-
-### [Ejercicio: WPA3 y SAE](analysis_scripts/04_wpa3_analysis.sh)
-Análisis de WPA3 y el protocolo SAE (Dragonfly), incluyendo vulnerabilidades Dragonblood.
-
-**Temas**: SAE, forward secrecy, Dragonblood CVEs, transition mode
-
-### [Ejercicio: Traffic Analysis](analysis_scripts/05_traffic_analysis.sh)
-Análisis de tráfico HTTP/DNS sobre WiFi, detección de MitM.
-
-**Temas**: Captive portals, SSL stripping, DNS tunneling, session hijacking
+**Ver guía completa**: [scripts/demo/README.md](scripts/demo/README.md)
 
 ## 🔧 Uso
 
-### Ejecución Individual
+### Ejecución de Scripts de Análisis
 
 ```bash
-cd analysis_scripts
-
-# Ejecutar ejercicio específico
-./01_handshake_analysis.sh
+# Ejecutar análisis específico
+bash scripts/analysis/01_handshake_analysis.sh
 
 # Ver resultados
-ls -l ../wifi_lab/outputs/
+ls -l wifi_lab/outputs/
+cat wifi_lab/reports/latest_report.txt
 ```
 
 ### Análisis Manual con Wireshark
 
 ```bash
 # Abrir PCAP en Wireshark
-wireshark wifi_lab/pcaps/wpa2/wpa2_handshake_example.pcapng
+wireshark wifi_lab/pcaps/wpa2/wpa_induction.pcap
 
 # Aplicar filtros útiles:
 # - eapol                          (4-way handshake)
@@ -190,8 +212,10 @@ tshark -r wifi_lab/pcaps/wpa2/*.pcap -Y "wlan.ssid" -T fields -e wlan.ssid | sor
 tshark -r wifi_lab/pcaps/wpa2/*.pcap -Y "eapol" | wc -l
 
 # Exportar HTTP requests
-tshark -r wifi_lab/pcaps/misc/http_traffic.cap -Y "http.request" -T fields -e http.host -e http.request.uri
+tshark -r wifi_lab/pcaps/misc/http_captive_portal.cap -Y "http.request" -T fields -e http.host -e http.request.uri
 ```
+
+**Ver más comandos**: [docs/exercises/CHEATSHEET.md](docs/exercises/CHEATSHEET.md)
 
 ## 📊 Fuentes de PCAPs
 
@@ -207,6 +231,8 @@ Los PCAPs se descargan automáticamente de:
   - Deauth attacks
   - HTTP/DNS traffic
   - EAPOL exchanges
+
+**Total**: 9 PCAPs (840KB) con escenarios realistas de análisis.
 
 Todos los PCAPs son de dominio público y están disponibles para uso educativo.
 
@@ -243,8 +269,9 @@ sudo apt update && sudo apt install tshark
 ### Error: "Permission denied" en scripts
 
 ```bash
-chmod +x setup_wifi_lab.sh
-chmod +x analysis_scripts/*.sh
+chmod +x scripts/setup/*.sh
+chmod +x scripts/demo/*.sh
+chmod +x scripts/analysis/*.sh
 ```
 
 ### PCAPs no se descargan
@@ -254,20 +281,11 @@ chmod +x analysis_scripts/*.sh
 ping gitlab.com
 ping raw.githubusercontent.com
 
-# Descargar manualmente
-wget https://gitlab.com/wireshark/wireshark/-/raw/master/test/captures/wpa-Induction.pcap
+# Ejecutar setup nuevamente
+bash scripts/setup/setup_wifi_lab.sh
 ```
 
-### Wireshark no captura interfaces
-
-```bash
-# macOS: Instalar ChmodBPF
-brew install --cask wireshark
-
-# Linux: Agregar usuario al grupo
-sudo usermod -aG wireshark $USER
-# Logout y login nuevamente
-```
+**Ver más**: [docs/guides/GUIA_INSTALACION.md](docs/guides/GUIA_INSTALACION.md#troubleshooting)
 
 ## 📖 Referencias
 
@@ -304,10 +322,12 @@ Este material educativo está disponible bajo **licencia MIT** para uso académi
 
 Los PCAPs descargados provienen de repositorios públicos y mantienen sus licencias originales.
 
+Ver [LICENSE](LICENSE) para más detalles.
+
 ## 📧 Contacto
 
-**Profesor**: [Nombre del Profesor]
-**Email**: [email@utn.edu.ar]
+**Autor**: fboiero
+**Email**: fboiero@frvm.utn.edu.ar
 **Institución**: Universidad Tecnológica Nacional
 **Laboratorio**: Blockchain & Ciberseguridad
 
@@ -319,6 +339,15 @@ Los PCAPs descargados provienen de repositorios públicos y mantienen sus licenc
 - **Wireshark Project** - Por mantener sample captures públicas
 - **Jens Steube (Hashcat)** - Por descubrir PMKID attack
 - **Comunidad de seguridad WiFi** - Por compartir conocimiento
+
+---
+
+## 📄 Documentación Adicional
+
+- **[INICIO_RAPIDO.md](docs/guides/INICIO_RAPIDO.md)** - Guía de inicio extendida
+- **[TUTORIAL_PASO_A_PASO.md](docs/guides/TUTORIAL_PASO_A_PASO.md)** - Tutorial completo
+- **[GUIA_DEMO.md](docs/guides/GUIA_DEMO.md)** - Cómo presentar en clase
+- **[INSTRUCTOR_GUIDE.md](docs/guides/INSTRUCTOR_GUIDE.md)** - Guía del instructor
 
 ---
 
