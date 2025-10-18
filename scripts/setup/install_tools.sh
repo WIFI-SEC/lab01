@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 # ======================================================
 # Script: install_tools.sh
@@ -65,7 +65,7 @@ echo ""
 # Función para verificar si comando existe
 # ==========================================
 command_exists() {
-    command -v "$1" &> /dev/null
+    command -v "$1" >/dev/null 2>&1
 }
 
 # ==========================================

@@ -347,7 +347,7 @@ printf "  ${BLUE}•${NC} Tamaño total: ${BOLD}$total_size${NC}\n"
 printf "  ${BLUE}•${NC} Estructura de directorios:\n"
 echo ""
 
-if command -v tree &> /dev/null; then
+if command -v tree >/dev/null 2>&1; then
     tree -L 2 -h pcaps | head -30
 else
     find pcaps -type f | head -20 | sed 's|pcaps/|  |g'

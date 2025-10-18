@@ -33,7 +33,7 @@ check_command() {
     local description=$2
     local required=$3  # "required" o "optional"
 
-    if command -v "$cmd" &> /dev/null; then
+    if command -v "$cmd" >/dev/null 2>&1; then
         version=$("$cmd" --version 2>&1 | head -1)
         printf "${GREEN}[✓]${NC} $description: ${BOLD}instalado${NC}\n"
         printf "    Versión: $version\n"
@@ -188,7 +188,7 @@ if [ -d "wifi_lab/pcaps" ]; then
 
             cd wifi_lab
 
-            if sha256sum -c manifest.sha256 &>/dev/null || shasum -a 256 -c manifest.sha256 &>/dev/null; then
+            if sha256sum -c manifest.sha256 >/dev/null 2>&1 || shasum -a 256 -c manifest.sha256 >/dev/null 2>&1; then
                 printf "${GREEN}[✓]${NC} Integridad de PCAPs: ${BOLD}VERIFICADA${NC}\n"
                 ((SUCCESS++))
             else
@@ -269,7 +269,7 @@ echo ""
 # ==========================================
 # Test básico de tshark
 # ==========================================
-if command -v tshark &> /dev/null && [ "$TOTAL_PCAPS" -gt 0 ]; then
+if command -v tshark >/dev/null 2>&1 && [ "$TOTAL_PCAPS" -gt 0 ]; then
     printf "${BOLD}Ejecutando test básico de tshark...${NC}\n"
     echo ""
 
@@ -317,14 +317,14 @@ if [ $ERRORS -gt 0 ] || [ $WARNINGS -gt 0 ]; then
     if [ $ERRORS -gt 0 ]; then
         printf "${RED}ERRORES CRÍTICOS:${NC}\n"
 
-        if ! command -v tshark &> /dev/null; then
+        if ! command -v tshark >/dev/null 2>&1; then
             echo "  1. Instalar Wireshark/tshark:"
             echo "     macOS:  brew install wireshark"
             echo "     Linux:  sudo apt install tshark"
             echo ""
         fi
 
-        if ! command -v aircrack-ng &> /dev/null; then
+        if ! command -v aircrack-ng >/dev/null 2>&1; then
             echo "  2. Instalar aircrack-ng:"
             echo "     macOS:  brew install aircrack-ng"
             echo "     Linux:  sudo apt install aircrack-ng"
@@ -341,12 +341,12 @@ if [ $ERRORS -gt 0 ] || [ $WARNINGS -gt 0 ]; then
     if [ $WARNINGS -gt 0 ]; then
         printf "${YELLOW}MEJORAS SUGERIDAS:${NC}\n"
 
-        if ! command -v wireshark &> /dev/null; then
+        if ! command -v wireshark >/dev/null 2>&1; then
             echo "  • Instalar Wireshark GUI para análisis visual"
             echo ""
         fi
 
-        if ! command -v hcxpcapngtool &> /dev/null; then
+        if ! command -v hcxpcapngtool >/dev/null 2>&1; then
             echo "  • Instalar hcxtools para ejercicios de PMKID:"
             echo "    macOS:  brew install hcxtools"
             echo "    Linux:  sudo apt install hcxtools"

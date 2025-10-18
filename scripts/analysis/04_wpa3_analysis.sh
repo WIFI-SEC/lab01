@@ -9,7 +9,7 @@ OUTPUT_DIR="./wifi_lab/outputs"
 
 # Función auxiliar para formatear tablas (compatible sin 'column')
 format_table() {
-    if command -v column &> /dev/null; then
+    if command -v column >/dev/null 2>&1; then
         column -t -s'|'
     else
         cat  # Si no hay column, mostrar tal cual
@@ -21,7 +21,7 @@ echo "  Ejercicio 4: WPA3 SAE Analysis"
 echo "=========================================="
 echo ""
 
-if ! command -v tshark &> /dev/null; then
+if ! command -v tshark >/dev/null 2>&1; then
     echo "[!] Error: tshark no está instalado."
     exit 1
 fi

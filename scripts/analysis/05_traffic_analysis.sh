@@ -9,7 +9,7 @@ OUTPUT_DIR="./wifi_lab/outputs"
 
 # Función auxiliar para formatear tablas (compatible sin 'column')
 format_table() {
-    if command -v column &> /dev/null; then
+    if command -v column >/dev/null 2>&1; then
         column -t -s'|'
     else
         cat  # Si no hay column, mostrar tal cual
@@ -21,7 +21,7 @@ echo "  Ejercicio 5: Network Traffic Analysis"
 echo "=========================================="
 echo ""
 
-if ! command -v tshark &> /dev/null; then
+if ! command -v tshark >/dev/null 2>&1; then
     echo "[!] Error: tshark no está instalado."
     exit 1
 fi
@@ -92,7 +92,7 @@ if [ -f "$HTTP_PCAP" ]; then
 
     # Estadísticas generales
     echo "Estadísticas del PCAP:"
-    if command -v capinfos &> /dev/null; then
+    if command -v capinfos >/dev/null 2>&1; then
         capinfos "$HTTP_PCAP" 2>/dev/null | grep -E "(File size|Number of packets|Capture duration|Data rate)"
     else
         # Alternativa con tshark si capinfos no está disponible

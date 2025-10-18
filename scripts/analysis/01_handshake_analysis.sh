@@ -13,7 +13,7 @@ echo "=========================================="
 echo ""
 
 # Verificar que tshark esté instalado
-if ! command -v tshark &> /dev/null; then
+if ! command -v tshark >/dev/null 2>&1; then
     echo "[!] Error: tshark no está instalado."
     echo "    Instalar con: brew install wireshark (macOS) o apt install tshark (Linux)"
     exit 1
@@ -82,7 +82,7 @@ OUTPUT_HC="$OUTPUT_DIR/handshake_hashcat.hccapx"
 OUTPUT_AC="$OUTPUT_DIR/handshake_aircrack.cap"
 
 # Convertir a formato hashcat (requiere cap2hccapx o hcxpcapngtool)
-if command -v hcxpcapngtool &> /dev/null; then
+if command -v hcxpcapngtool >/dev/null 2>&1; then
     hcxpcapngtool -o "$OUTPUT_HC" "$PCAP_FILE" 2>/dev/null
     echo "[✓] Handshake exportado para hashcat: $OUTPUT_HC"
 else

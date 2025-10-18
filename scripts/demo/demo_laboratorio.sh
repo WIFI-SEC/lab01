@@ -121,7 +121,7 @@ pause 2
 printf "\n${GREEN}[2/10]${NC} Verificando estructura de directorios...\n\n"
 
 print_command "tree -L 2 wifi_lab (o estructura manual)"
-if command -v tree &> /dev/null; then
+if command -v tree >/dev/null 2>&1; then
     tree -L 2 wifi_lab 2>/dev/null | head -20
 else
     echo "wifi_lab/"

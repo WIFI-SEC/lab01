@@ -9,7 +9,7 @@ OUTPUT_DIR="./wifi_lab/outputs"
 
 # Función auxiliar para formatear tablas (compatible sin 'column')
 format_table() {
-    if command -v column &> /dev/null; then
+    if command -v column >/dev/null 2>&1; then
         column -t -s'|'
     else
         cat  # Si no hay column, mostrar tal cual
@@ -22,7 +22,7 @@ echo "=========================================="
 echo ""
 
 # Verificar tshark
-if ! command -v tshark &> /dev/null; then
+if ! command -v tshark >/dev/null 2>&1; then
     echo "[!] Error: tshark no está instalado."
     exit 1
 fi
@@ -111,7 +111,7 @@ echo ""
 OUTPUT_FILE="$OUTPUT_DIR/pmkid_hashes.txt"
 
 # Método 1: Usar hcxpcapngtool (recomendado)
-if command -v hcxpcapngtool &> /dev/null; then
+if command -v hcxpcapngtool >/dev/null 2>&1; then
     hcxpcapngtool -o "$OUTPUT_FILE" "$PCAP_FILE" 2>/dev/null
 
     if [ -f "$OUTPUT_FILE" ]; then
